@@ -47,7 +47,7 @@ python3 app.py
 
 ## Скриншот
 
-![Flask UI](assets/screenshots/flask-ui-light-theme.png)
+![Flask UI](assets/screenshots/flask-ui-light-theme.jpg)
 
 ## Структура
 
