@@ -45,6 +45,10 @@ python3 flask_app.py
 python3 app.py
 ```
 
+## Скриншот
+
+![Flask UI](assets/screenshots/flask-ui-light-theme.png)
+
 ## Структура
 
 - `db.py` — база данных, миграции схемы, бизнес-логика повторов
