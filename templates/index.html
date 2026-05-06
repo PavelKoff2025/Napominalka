@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Напоминалка Flask</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+<main class="container">
+    <header class="header">
+        <h1>Напоминалка</h1>
+        <p>Flask + SQLite, светлая тема</p>
+    </header>
+
+    <section class="card">
+        <h2>Добавить напоминание</h2>
+        <form action="{{ url_for('add_reminder') }}" method="post" id="add-form" class="form-grid">
+            <label>
+                Заголовок
+                <input type="text" name="title" required>
+            </label>
+            <label>
+                Описание
+                <input type="text" name="description" required>
+            </label>
+            <label>
+                Дата и время (DD-MM-YYYY HH:MM)
+                <input type="text" name="trigger_at" id="trigger-at" required>
+            </label>
+
+            <div class="quick-buttons">
+                <button type="button" data-minutes="1">Через 1 мин</button>
+                <button type="button" data-minutes="5">Через 5 мин</button>
+                <button type="button" data-minutes="15">Через 15 мин</button>
+                <button type="button" data-minutes="60">Через 1 час</button>
+            </div>
+
+            <label>
+                Повтор
+                <select name="recurrence" id="recurrence">
+                    <option value="none">Без повтора</option>
+                    <option value="weekly">По дням недели</option>
+                    <option value="by_date">По дате</option>
+                    <option value="monthly">Каждый месяц</option>
+                    <option value="yearly">Каждый год</option>
+                </select>
+            </label>
+
+            <label id="weekdays-wrap" class="hidden">
+                Дни недели
+                <div class="weekdays">
+                    <label><input type="checkbox" value="0"> Пн</label>
+                    <label><input type="checkbox" value="1"> Вт</label>
+                    <label><input type="checkbox" value="2"> Ср</label>
+                    <label><input type="checkbox" value="3"> Чт</label>
+                    <label><input type="checkbox" value="4"> Пт</label>
+                    <label><input type="checkbox" value="5"> Сб</label>
+                    <label><input type="checkbox" value="6"> Вс</label>
+                </div>
+                <input type="hidden" name="weekdays" id="weekdays-input">
+            </label>
+
+            <div id="by-date-wrap" class="inline-fields hidden">
+                <label>
+                    Число месяца
+                    <input type="number" min="1" max="31" name="by_date_day" value="1">
+                </label>
+            </div>
+
+            <div id="yearly-wrap" class="inline-fields hidden">
+                <label>
+                    День
+                    <input type="number" min="1" max="31" name="yearly_day" value="1">
+                </label>
+                <label>
+                    Месяц
+                    <input type="number" min="1" max="12" name="yearly_month" value="1">
+                </label>
+            </div>
+
+            <button class="primary" type="submit">Добавить напоминание</button>
+        </form>
+    </section>
+
+    <section class="toolbar">
+        <form method="get" action="{{ url_for('index') }}">
+            <label>
+                Фильтр
+                <select name="status" onchange="this.form.submit()">
+                    {% for status in statuses %}
+                        <option value="{{ status }}" {% if status == selected_status %}selected{% endif %}>{{ status }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+        </form>
+        <div class="stats">
+            Всего: {{ total }} |
+            Ожидает: {{ counts["Ожидает"] }} |
+            Готово: {{ counts["Готово"] }} |
+            Просрочено: {{ counts["Просрочено"] }}
+        </div>
+    </section>
+
+    <section class="card">
+        <h2>Список напоминаний</h2>
+        <div class="table-wrap">
+            <table>
+                <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Заголовок</th>
+                    <th>Описание</th>
+                    <th>Дата/Время</th>
+                    <th>Повтор</th>
+                    <th>Статус</th>
+                    <th>Создано</th>
+                    <th>Действия</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for reminder in reminders %}
+                    <tr class="{% if reminder.status == 'Готово' %}row-done{% elif reminder.status == 'Просрочено' %}row-overdue{% elif reminder.status == 'Отменено' %}row-cancelled{% endif %}">
+                        <td>{{ reminder.reminder_id }}</td>
+                        <td>{{ reminder.title }}</td>
+                        <td>{{ reminder.description }}</td>
+                        <td>{{ reminder.trigger_at.strftime(datetime_format) }}</td>
+                        <td>{{ recurrence_label(reminder) }}</td>
+                        <td>{{ reminder.status }}</td>
+                        <td>{{ reminder.created_at.strftime(datetime_format) }}</td>
+                        <td class="actions">
+                            <form method="post" action="{{ url_for('set_status', reminder_id=reminder.reminder_id) }}">
+                                <input type="hidden" name="status" value="Готово">
+                                <button type="submit">Готово</button>
+                            </form>
+                            <form method="post" action="{{ url_for('set_status', reminder_id=reminder.reminder_id) }}">
+                                <input type="hidden" name="status" value="Отменено">
+                                <button type="submit">Отменить</button>
+                            </form>
+                            <form method="post" action="{{ url_for('delete_reminder', reminder_id=reminder.reminder_id) }}">
+                                <button class="danger" type="submit">Удалить</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+
+<dialog id="due-dialog">
+    <h3 id="due-title"></h3>
+    <p id="due-time"></p>
+    <p id="due-description"></p>
+    <button id="due-close">Закрыть</button>
+</dialog>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

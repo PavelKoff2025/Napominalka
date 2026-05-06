@@ -1,0 +1,2 @@
+Flask
+win10toast==0.9; platform_system == "Windows"
